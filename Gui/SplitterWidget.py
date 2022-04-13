@@ -2,9 +2,14 @@ import os
 import json
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-import requests
-import pyttsx3
 import json
+import serial
+import pyttsx3
+import requests
+
+import datetime
+
+
 from dotenv import load_dotenv
 
 
@@ -54,6 +59,9 @@ class SplitterWindow(QtWidgets.QWidget):
         self.user_preference = []
         self.previous_faces = []
 
+        # self.reader = Reader()
+        # self.reader.start()
+
     def switchCapturing(self, capture: bool):  # starts and stops video captures
 
         if capture:
@@ -88,7 +96,7 @@ class SplitterWindow(QtWidgets.QWidget):
         if self.previous_faces == faces:
             return
 
-        print("Previosu: faces: ", self.previous_faces)
+        # print("Previosu: faces: ", self.previous_faces)
         self.previous_faces = faces
 
         with open(JSON_PATH,  encoding='utf-8', mode="r") as f_obj:
@@ -111,12 +119,31 @@ class SplitterWindow(QtWidgets.QWidget):
         # print(self.user_preference)
         for x in self.user_preference:
             if x["name"] == face:
+
+                now = datetime.datetime.now()
+                hour = now.hour
+
+                if hour < 12:
+                    greeting = "Good morning"
+                
+                elif hour < 18:
+                    greeting = "Good afternoon"
+                
+                else:
+                    greeting = "Good evening"
+
+                # self.reader.speak(greeting)
+                pyttsx3.speak(greeting+x["name"])
+
                 if x["preference"]["news"]:
+
                     self.news = NewsReader()
                     # news.exec()
                     self.news.start()
 
-                    # break 
+                    break 
+
+
 
 class NewsReader(QtCore.QThread):
 
@@ -134,4 +161,57 @@ class NewsReader(QtCore.QThread):
             
         except Exception as e:
             print("error occurred: ", e)
-            pyttsx3.speak("An error occured")
+            pyttsx3.speak("An error occured trying to read news")
+
+
+
+class InstructionsExecutor(QtCore.QThread):
+    completedInstruction = QtCore.pyqtSignal(bool)  # sent when instruction execution is complete
+    connectionStatus = QtCore.pyqtSignal(str)
+
+    def __init__(self, com, baud=9000, *args, **kwargs):
+        super(InstructionsExecutor, self).__init__(*args, **kwargs)
+        self.com = com
+        self.baud = baud
+        self.instruction = ""
+        self.serial_port = None
+
+        print(repr(com), baud, repr(baud))
+
+    def run(self) -> None:
+        print("STARTING INSTRUCTION....")
+        self.connectionStatus.emit("Connecting...")
+
+        try:
+            self.serial_port = serial.Serial(self.com, self.baud, timeout=2)
+            self.connectionStatus.emit("connection success")
+
+        except serial.serialutil.SerialException as e:
+            self.connectionStatus.emit(str(e))
+            return
+
+        while not self.isInterruptionRequested():  # run until interrupt request becomes False
+            print("Instruction", repr(self.instruction))
+
+            if "delay" in self.instruction:
+                ins, val = self.instruction.split(":")
+                self.msleep(int(val))
+                self.completedInstruction.emit(True)
+                continue
+
+            if self.instruction:
+
+                self.serial_port.write(bytes(self.instruction, "utf-8"))
+                self.instruction = ""  # reset instruction else it will run the same instruction again and again
+
+            read = self.serial_port.readline()
+            print("read: ", read)
+            if read and read == b"Done":
+                self.completedInstruction.emit(True)
+                print("Completed")
+
+        self.serial_port.close()
+        self.connectionStatus.emit("Disconnected")
+
+    def setInstruction(self, instruction):
+        self.instruction = instruction
