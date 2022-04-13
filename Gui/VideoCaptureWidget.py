@@ -14,6 +14,8 @@ class VideoCaptureDisplayWidget(QtWidgets.QWidget):
     capturedImage = QtCore.pyqtSignal(QtGui.QImage)  # emits the captured image
     cameraFailed = QtCore.pyqtSignal()
 
+    foundFaces = QtCore.pyqtSignal(list)
+
     def __init__(self, *args, **kwargs):
         super(VideoCaptureDisplayWidget, self).__init__(*args, **kwargs)
 
@@ -37,6 +39,7 @@ class VideoCaptureDisplayWidget(QtWidgets.QWidget):
         self.capture = Capture(self.cameraDevice)
         self.capture.frameChanged.connect(self.updateImage)
         self.capture.cameraFailed.connect(self.cameraUnsuccessful)
+        self.capture.facesFound.connect(self.foundFaces.emit)
         self.capture.start()
 
     def cameraUnsuccessful(self):
@@ -80,11 +83,14 @@ class Capture(QtCore.QThread): # capture video frame by frame
     frameChanged = QtCore.pyqtSignal(QtGui.QImage)  # emits new image
     cameraFailed = QtCore.pyqtSignal() # emits when the camera was unsuccessful
 
+    facesFound = QtCore.pyqtSignal(list)
+
     def __init__(self, cameraDevice=0, *args, **kwargs):
         super(Capture, self).__init__(*args, **kwargs)
         self.cameraDevice = cameraDevice
 
         self.img_recog = ImageRecognition()
+        self.img_recog.faceFound.connect(self.facesFound.emit)
 
         self.is_drawing = False
 
@@ -194,9 +200,13 @@ class DrawLabel(QtWidgets.QLabel):  # Enables user to draw over the image
             self.update()
 
 
-class ImageRecognition:
+class ImageRecognition(QtCore.QObject):
+
+    faceFound = QtCore.pyqtSignal(list)
 
     def __init__(self, *args, **kwargs):
+        super(ImageRecognition, self).__init__(*args, **kwargs)
+
         self.data = []
         self.known_face_encodings = []
         self.known_names = []
@@ -252,6 +262,8 @@ class ImageRecognition:
 
             face_names.append(name)
 
+        if face_names:
+            self.faceFound.emit(face_names)
         # process_this_frame = not process_this_frame
         
         if draw_frame:

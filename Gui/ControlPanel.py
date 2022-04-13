@@ -2,9 +2,17 @@ import re
 import os
 import sys
 import json
+import requests
+import pyttsx3
 from PyQt5 import QtWidgets, QtCore, QtGui, QtMultimedia
-# from pygrabber.PyGrabber import PyGrabber
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+engine = pyttsx3.init()
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[16].id)
 
 JSON_PATH = os.path.join(os.getcwd(), "data/data.json")
 
@@ -52,6 +60,7 @@ class ControlPanel(QtWidgets.QWidget):
 
         self.glow_bulb1 = QtWidgets.QCheckBox(text="Glow bulb1?")
         self.glow_bulb2 = QtWidgets.QCheckBox(text="Glow bulb2?")
+        self.read_news = QtWidgets.QCheckBox(text="Read news")
 
         self.saveImage = QtWidgets.QPushButton("Save data", clicked=self.save)
 
@@ -61,8 +70,11 @@ class ControlPanel(QtWidgets.QWidget):
         self.capturedFrame.layout().addWidget(self.directory_edit)
         self.capturedFrame.layout().addWidget(self.save_as_lbl)
         self.capturedFrame.layout().addWidget(self.set_fan_speed)
+        
         self.capturedFrame.layout().addWidget(self.glow_bulb1)
         self.capturedFrame.layout().addWidget(self.glow_bulb2)
+        self.capturedFrame.layout().addWidget(self.read_news)
+        
         self.capturedFrame.layout().addWidget(self.saveImage)
 
         self.capturedFrame.hide()
@@ -148,6 +160,7 @@ class ControlPanel(QtWidgets.QWidget):
                 "fanspeed": self.set_fan_speed.value(),
                 "light1": self.glow_bulb1.isChecked(),
                 "light2": self.glow_bulb2.isChecked(),
+                "news": self.read_news.isChecked()
             }
         }
 
@@ -176,11 +189,3 @@ class ControlPanel(QtWidgets.QWidget):
 
         self.imgSaved.emit()
 
-
-if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-
-    win = ControlPanel()
-    win.show()
-
-    sys.exit(app.exec())
