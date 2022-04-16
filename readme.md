@@ -1,6 +1,6 @@
 # SHOME
 
-This project helps to change your room ambience according to the user using facial recognition.
+This project helps to change your room ambience according to the user using facial recognition. This is just a prototype not a complete product. Read the code and modify it according to your needs.
 
 We make use of facial-recognition library to detect faces, currently the `face_location` model is set to 'cnn'. which can be slow, but more accurate, where as hog is less accurate but fast.
 
@@ -16,3 +16,13 @@ SHome/
         └── imagedata/
             └── example.png
 ```
+
+> Note: please do the connections based on the ardunio code provided in the ardunio folder
+# Usage instruction
+
+![demo](demoimages\iot-project-demo.jpg)
+
+1. Click on start capture button in the left panel.
+2. Click on the capture frame button, you will be presented with a rectangular draw tool, please use it to mark face.
+3. select preferences, and in set image name include only the name of the file.
+4. Thats it now whenever it detects a saved face, it will change the room ambience.
