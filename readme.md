@@ -20,9 +20,9 @@ SHome/
 > Note: please do the connections based on the ardunio code provided in the ardunio folder
 # Usage instruction
 
-![demo](demoimages\iot-project-demo.jpg)
-
-1. Click on start capture button in the left panel.
-2. Click on the capture frame button, you will be presented with a rectangular draw tool, please use it to mark face.
-3. select preferences, and in set image name include only the name of the file.
-4. Thats it now whenever it detects a saved face, it will change the room ambience.
+![demo](https://github.com/PaulleDemon/SHomes/blob/master/demoimages/iot-project-demo.jpg)
+1. run main.py from GUI folder
+2. Click on start capture button in the left panel.
+3. Click on the capture frame button, you will be presented with a rectangular draw tool, please use it to mark face. A preview will be generated on the left panel.
+4. select preferences, and in set image name include only the name of the file.
+5. Thats it now whenever it detects a saved face, it will change the room ambience.
