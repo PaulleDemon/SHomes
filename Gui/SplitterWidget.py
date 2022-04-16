@@ -8,7 +8,7 @@ import pyttsx3
 import requests
 
 import datetime
-
+import threading
 
 from dotenv import load_dotenv
 
@@ -114,15 +114,41 @@ class SplitterWindow(QtWidgets.QWidget):
         
         self.change_ambinence(faces)
 
+    def greet_user(self, user: str, read_news:bool = False):
+
+        now = datetime.datetime.now()
+        hour = now.hour
+
+        if hour < 12:
+            greeting = "Good morning"
+        
+        elif hour < 16:
+            greeting = "Good afternoon"
+        
+        else:
+            greeting = "Good evening"
+
+        # self.reader.speak(greeting)
+        pyttsx3.speak(greeting+user)
+
+        pyttsx3.speak("Changing room ambience to your preference")
+
+        if read_news:
+            self.news = NewsReader()     
+            self.news.start()
+
+
+
     def change_ambinence(self, faces):
         # change the room ambience according to the user
+        
+        if not faces:
+            self.instruction_executor.setInstruction("off")
+            return
 
         if faces == self.previous_faces and not self.previous_faces:
             return 
 
-        # if not faces:
-        #     self.instruction_executor.setInstruction("off")
-        #     return
         print("Face found...")
 
 
@@ -131,35 +157,19 @@ class SplitterWindow(QtWidgets.QWidget):
         # print(self.user_preference)
         for x in self.user_preference:
             if x["name"] == face:
-
-                now = datetime.datetime.now()
-                hour = now.hour
-
-                if hour < 12:
-                    greeting = "Good morning"
                 
-                elif hour < 16:
-                    greeting = "Good afternoon"
-                
-                else:
-                    greeting = "Good evening"
-
-                # self.reader.speak(greeting)
-                pyttsx3.speak(greeting+x["name"])
-
-                pyttsx3.speak("Changing room ambience to your preference")
+                thread = threading.Thread(target=self.greet_user, args=(x["name"], x["preference"]["news"]))
+                thread.start()
 
                 self.instruction_executor.setInstruction(json.dumps(x["preference"]))
 
-                if x["preference"]["news"]:
+                break
 
-                    self.news = NewsReader()
-                    # news.exec()
-                    self.news.start()
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
 
-                    break 
-                
+        self.instruction_executor.setInstruction("off")
 
+        return super().closeEvent(a0)
 
 class NewsReader(QtCore.QThread):
 
@@ -188,7 +198,7 @@ class InstructionsExecutor(QtCore.QThread):
     completedInstruction = QtCore.pyqtSignal(bool)  # sent when instruction execution is complete
     connectionStatus = QtCore.pyqtSignal(str) 
 
-    def __init__(self, com="/dev/ttyACM0", baud=38400, *args, **kwargs): # the com port for linux, windows use numbers
+    def __init__(self, com="COM3", baud=9600, *args, **kwargs): # the com port for linux "/dev/ttyACM0", windows use COM3
         super(InstructionsExecutor, self).__init__(*args, **kwargs)
         self.com = com
         self.baud = baud
@@ -203,28 +213,28 @@ class InstructionsExecutor(QtCore.QThread):
 
         try:
             self.serial_port = serial.Serial(self.com, self.baud, timeout=2)
+            self.serial_port.stopbits = 2
             self.connectionStatus.emit("connection success")
 
         except serial.serialutil.SerialException as e:
             self.connectionStatus.emit(str(e))
-            print("error occurred trying to connect to the given port")
+            print("error occurred trying to connect to the given port", e)
             return
-
-        print("INturreption: ", self.isInterruptionRequested())
 
         while not self.isInterruptionRequested():
             
             if self.instruction: 
                 self.serial_port.write(bytes(self.instruction, "utf-8"))
 
-            print("Instruction: ", bytes(self.instruction, "utf-8"))
+            # print("Instruction: ", bytes(self.instruction, "utf-8"))
 
             try:
                 read = self.serial_port.readline()
-                print("read: ", read)
-                if read and read == b"Done":
-                    self.completedInstruction.emit(True)
-                    self.instruction = ""
+                
+                print("read: ", read.decode())
+                # if read and read == b"done":
+                #     self.completedInstruction.emit(True)
+                #     self.instruction = ""
 
             except serial.SerialException:
                 pass
@@ -236,4 +246,3 @@ class InstructionsExecutor(QtCore.QThread):
     def setInstruction(self, instruction):
         print("Set instructinos: ", instruction)
         self.instruction = instruction
-        

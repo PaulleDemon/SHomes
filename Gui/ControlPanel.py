@@ -12,7 +12,9 @@ load_dotenv()
 
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[16].id)
+# print("Voices: ", voices)
+# engine.setProperty('voice', voices[16].id) // linux male voice
+engine.setProperty('voice', voices[1].id)
 
 JSON_PATH = os.path.join(os.getcwd(), "data/data.json")
 
@@ -138,7 +140,7 @@ class ControlPanel(QtWidgets.QWidget):
 
     def hideCaptureOptions(self):
         self.capturedFrame.hide()
-
+        
     def save(self):
 
         directory = self.directory_edit.text()

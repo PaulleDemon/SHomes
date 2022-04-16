@@ -4,7 +4,7 @@ from SplitterWidget import SplitterWindow
 
 import os
 
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # for linux users to use open cv with pyqt
+# os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # for linux users to use open cv with pyqt
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)

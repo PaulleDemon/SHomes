@@ -1,5 +1,5 @@
 {
     "board": "arduino:avr:uno",
-    "port": "/dev/ttyACM0",
+    "port": "COM5",
     "sketch": "arduino/shome/shome.ino"
 }

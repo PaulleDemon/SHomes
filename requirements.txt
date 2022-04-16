@@ -1,6 +1,9 @@
-face_recognition
+face-recognition
 opencv-python
 imutils
 dlib
 cmake
 PyQt5
+pyserial
+pyttsx3
+python-dotenv

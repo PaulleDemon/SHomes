@@ -4,50 +4,66 @@
 #include <ArduinoJson.h>
 
 
-
-#define RX 3
-#define TX 4
-
-SoftwareSerial Bluetooth(RX, TX);
+#define LED1 8
+#define LED2 9
 
 void setup(){
 
     Serial.begin(9600);
-    Bluetooth.begin(38400);
     Serial.println("Starting...");
+
+    pinMode(LED1, OUTPUT);
+    pinMode(LED2, OUTPUT);
 }
 
 void loop(){
    
 
-    if (Bluetooth.available()){
-        String instruction = Bluetooth.readString();
+    if (Serial.available()){
+        String instruction = Serial.readString();
 
-        Serial.print(instruction);
-
-        DynamicJsonDocument jdoc(2048);
-
-        DeserializationError jsonParseError = deserializeJson(jdoc, instruction);
-      
-        if(jsonParseError){
-            Serial.println("Error parsing JSON");
-        }
-        else{
-
-            int fanSpeed = jdoc["fanspeed"];
-            bool light1 = jdoc["light1"];
-            bool light2 = jdoc["light2"];
-
-            Serial.println(fanSpeed);
-            Serial.println(light1);
-            Serial.println(light2);
+        if (instruction.equals("off")){
+            digitalWrite(LED1, LOW);
+            digitalWrite(LED1, LOW);
+            return;
         }
 
-        Bluetooth.write("done");
+        else {
+          StaticJsonDocument<1024> jdoc;
+  
+          DeserializationError error = deserializeJson(jdoc, instruction);
+          
+          if(error){
+              Serial.println("Error parsing JSON");
+              Serial.write("Error parsing JSON\n");
+          }
+          else{
+  
+              int fanSpeed = jdoc["fanspeed"];
+              bool light1 = jdoc["light1"];
+              bool light2 = jdoc["light2"];
+  
+              digitalWrite(LED1, LOW); 
+              digitalWrite(LED2, LOW);
+              
+              if (light1){
+                digitalWrite(LED1, HIGH);
+              }
+                    
+              if (light2){
+                digitalWrite(LED2, HIGH);
+              }
+         
+  //            Serial.println(fanSpeed);
+  //            Serial.println(light1);
+  //            Serial.println(light2);
+          }
+        }
+        Serial.write("done");
 
     }
 
-    else
-      Serial.println("Not available");
+    else;
+      //Serial.println("Not available");
   
 }

@@ -90,7 +90,7 @@ class Capture(QtCore.QThread): # capture video frame by frame
         self.cameraDevice = cameraDevice
 
         self.img_recog = ImageRecognition()
-        self.img_recog.faceFound.connect(self.facesFound.emit)
+        self.img_recog.facesFound.connect(self.facesFound.emit)
 
         self.is_drawing = False
 
@@ -101,13 +101,16 @@ class Capture(QtCore.QThread): # capture video frame by frame
             self.cameraFailed.emit()
             return
 
-        process_frame = False
+        process_frame = 0
 
         while not self.isInterruptionRequested():
 
             ret, frame = self.cap.read()
 
-            if process_frame:
+            if process_frame == 3:
+                process_frame = 0
+
+            if process_frame == 0:
 
                 frame = self.img_recog.read_frame(frame, not self.is_drawing)
 
@@ -119,7 +122,7 @@ class Capture(QtCore.QThread): # capture video frame by frame
                     pix = convertToQtFormat.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
                     self.frameChanged.emit(pix)
 
-            process_frame = not process_frame
+            process_frame += 1
 
         self.cap.release()
 
@@ -202,7 +205,7 @@ class DrawLabel(QtWidgets.QLabel):  # Enables user to draw over the image
 
 class ImageRecognition(QtCore.QObject):
 
-    faceFound = QtCore.pyqtSignal(list)
+    facesFound = QtCore.pyqtSignal(list)
 
     def __init__(self, *args, **kwargs):
         super(ImageRecognition, self).__init__(*args, **kwargs)
@@ -215,7 +218,11 @@ class ImageRecognition(QtCore.QObject):
     def load(self):
 
         with open(os.path.join(os.getcwd(), 'data', 'data.json')) as f_obj:
-            self.data = json.load(f_obj)
+            try:
+                self.data = json.load(f_obj)
+                
+            except json.decoder.JSONDecodeError:
+                print("decoding error...")
 
         for x in self.data:
 
@@ -262,18 +269,18 @@ class ImageRecognition(QtCore.QObject):
 
             face_names.append(name)
 
-        if face_names:
-            self.faceFound.emit(face_names)
+        # if face_names:
+        self.facesFound.emit(face_names)
         # process_this_frame = not process_this_frame
         
         if draw_frame:
             # Display the results
             for (top, right, bottom, left), name in zip(face_locations, face_names):
                 # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-                top *= 8
-                right *= 8
-                bottom *= 8
-                left *= 8
+                top *= 7
+                right *= 7
+                bottom *= 7
+                left *= 7
 
                 # Draw a box around the face
                 cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
