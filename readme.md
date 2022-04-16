@@ -23,6 +23,6 @@ SHome/
 ![demo](https://github.com/PaulleDemon/SHomes/blob/master/demoimages/iot-project-demo.jpg)
 1. run main.py from GUI folder
 2. Click on start capture button in the left panel.
-3. Click on the capture frame button, you will be presented with a rectangular draw tool, please use it to mark face. A preview will be generated on the left panel.
+3. Click on the capture frame button, you will be presented with a rectangular draw tool, please use it to mark face. A preview will be generated on the right panel.
 4. select preferences, and in set image name include only the name of the file.
 5. Thats it now whenever it detects a saved face, it will change the room ambience.
