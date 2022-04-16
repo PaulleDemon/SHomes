@@ -6,6 +6,7 @@
 
 #define LED1 8
 #define LED2 9
+#define MOTOR 3
 
 void setup(){
 
@@ -14,15 +15,17 @@ void setup(){
 
     pinMode(LED1, OUTPUT);
     pinMode(LED2, OUTPUT);
+    pinMode(MOTOR, OUTPUT);
+    
 }
 
 void loop(){
-   
+    digitalWrite(motorPin, HIGH);
 
     if (Serial.available()){
         String instruction = Serial.readString();
-
-        if (instruction.equals("off")){
+        
+        if (!instruction || instruction.equals("off")){
             digitalWrite(LED1, LOW);
             digitalWrite(LED1, LOW);
             return;
@@ -53,17 +56,14 @@ void loop(){
               if (light2){
                 digitalWrite(LED2, HIGH);
               }
-         
-  //            Serial.println(fanSpeed);
-  //            Serial.println(light1);
-  //            Serial.println(light2);
+
+              analogWrite(motorPin, fanSpeed*63); // we get 63 from dividing 255/4 because 4 is the max speed defined in frontend
+ 
           }
         }
         Serial.write("done");
 
     }
 
-    else;
-      //Serial.println("Not available");
   
 }

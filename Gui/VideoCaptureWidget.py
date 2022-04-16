@@ -35,6 +35,7 @@ class VideoCaptureDisplayWidget(QtWidgets.QWidget):
         self.img_label.setPixmap(QtGui.QPixmap.fromImage(img))
 
     def start(self):
+        """ opens the camera from another thread """
         self.img_label.setText("")
         self.capture = Capture(self.cameraDevice)
         self.capture.frameChanged.connect(self.updateImage)
@@ -216,6 +217,7 @@ class ImageRecognition(QtCore.QObject):
         self.load()
 
     def load(self):
+        """ loads the json file of known faces and preferences """
 
         with open(os.path.join(os.getcwd(), 'data', 'data.json')) as f_obj:
             try:

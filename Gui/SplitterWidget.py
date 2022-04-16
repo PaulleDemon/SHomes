@@ -63,6 +63,7 @@ class SplitterWindow(QtWidgets.QWidget):
         self.previous_faces = []
 
         self.instruction_executor = InstructionsExecutor()
+        self.instruction_executor.setTerminationEnabled(True)
         self.instruction_executor.start()
 
         # self.reader = Reader()
@@ -146,8 +147,8 @@ class SplitterWindow(QtWidgets.QWidget):
             self.instruction_executor.setInstruction("off")
             return
 
-        if faces == self.previous_faces and not self.previous_faces:
-            return 
+        # if faces == self.previous_faces and not self.previous_faces:
+        #     return 
 
         print("Face found...")
 
@@ -158,18 +159,21 @@ class SplitterWindow(QtWidgets.QWidget):
         for x in self.user_preference:
             if x["name"] == face:
                 
-                thread = threading.Thread(target=self.greet_user, args=(x["name"], x["preference"]["news"]))
-                thread.start()
+                if self.previous_faces and faces != self.previous_faces: 
+                    thread = threading.Thread(target=self.greet_user, args=(x["name"], x["preference"]["news"]))
+                    thread.start()
 
                 self.instruction_executor.setInstruction(json.dumps(x["preference"]))
 
                 break
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-
         self.instruction_executor.setInstruction("off")
-
+        self.instruction_executor.requestInterruption()
+        self.instruction_executor.wait(1000)
+        print("Closing...")
         return super().closeEvent(a0)
+
 
 class NewsReader(QtCore.QThread):
 
@@ -177,7 +181,8 @@ class NewsReader(QtCore.QThread):
 
 
     def run(self) -> None:
-    
+        """ using newsapi.org, please register with newsapi and place the API key in .env file or register in 
+        system environment variables """
         try:
             res = requests.get(f"https://newsapi.org/v2/top-headlines?country=in&apiKey={ os.getenv('newsAPI')}&pageSize=3")
 
@@ -198,7 +203,8 @@ class InstructionsExecutor(QtCore.QThread):
     completedInstruction = QtCore.pyqtSignal(bool)  # sent when instruction execution is complete
     connectionStatus = QtCore.pyqtSignal(str) 
 
-    def __init__(self, com="COM3", baud=9600, *args, **kwargs): # the com port for linux "/dev/ttyACM0", windows use COM3
+    #NOTE: The com port for linux would be something like "/dev/ttyACM0" for windows use something like "COM3"
+    def __init__(self, com: str="COM3", baud: int=9600, *args, **kwargs): # the com port for linux "/dev/ttyACM0", windows use COM3
         super(InstructionsExecutor, self).__init__(*args, **kwargs)
         self.com = com
         self.baud = baud
@@ -222,7 +228,7 @@ class InstructionsExecutor(QtCore.QThread):
             return
 
         while not self.isInterruptionRequested():
-            
+
             if self.instruction: 
                 self.serial_port.write(bytes(self.instruction, "utf-8"))
 
@@ -239,6 +245,7 @@ class InstructionsExecutor(QtCore.QThread):
             except serial.SerialException:
                 pass
         
+        self.serial_port.write(bytes(self.instruction, "utf-8"))
         print("Disconnected")
         self.serial_port.close()
         self.connectionStatus.emit("Disconnected")

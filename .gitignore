@@ -2,3 +2,4 @@ imagedata
 data.json
 __pycache__
 .env
+.vscode
