@@ -12,7 +12,7 @@ if __name__ == '__main__':
     win = SplitterWindow()
     win.setWindowTitle("S Homes")
 
-    with open(r"Gui/Theme.qss", 'r') as read:
+    with open(r"GUI/Theme.qss", 'r') as read:
         win.setStyleSheet(read.read())
 
     win.show()

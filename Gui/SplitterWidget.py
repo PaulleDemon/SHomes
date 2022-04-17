@@ -104,7 +104,6 @@ class SplitterWindow(QtWidgets.QWidget):
             return
 
         # print("Previosu: faces: ", self.previous_faces)
-        self.previous_faces = faces
 
         with open(JSON_PATH,  encoding='utf-8', mode="r") as f_obj:
             try:
@@ -114,6 +113,7 @@ class SplitterWindow(QtWidgets.QWidget):
                 pass
         
         self.change_ambinence(faces)
+        self.previous_faces = faces
 
     def greet_user(self, user: str, read_news:bool = False):
 
@@ -129,10 +129,13 @@ class SplitterWindow(QtWidgets.QWidget):
         else:
             greeting = "Good evening"
 
+        print("Spekaing")
         # self.reader.speak(greeting)
         pyttsx3.speak(greeting+user)
 
         pyttsx3.speak("Changing room ambience to your preference")
+        
+        print("spoke")
 
         if read_news:
             self.news = NewsReader()     
@@ -155,14 +158,14 @@ class SplitterWindow(QtWidgets.QWidget):
 
         face = faces[-1]
 
-        # print(self.user_preference)
+
         for x in self.user_preference:
             if x["name"] == face:
                 
-                if self.previous_faces and faces != self.previous_faces: 
+                if faces != self.previous_faces: 
                     thread = threading.Thread(target=self.greet_user, args=(x["name"], x["preference"]["news"]))
                     thread.start()
-
+            
                 self.instruction_executor.setInstruction(json.dumps(x["preference"]))
 
                 break
@@ -170,7 +173,7 @@ class SplitterWindow(QtWidgets.QWidget):
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.instruction_executor.setInstruction("off")
         self.instruction_executor.requestInterruption()
-        self.instruction_executor.wait(1000)
+        self.instruction_executor.wait()
         print("Closing...")
         return super().closeEvent(a0)
 

@@ -102,28 +102,27 @@ class Capture(QtCore.QThread): # capture video frame by frame
             self.cameraFailed.emit()
             return
 
-        process_frame = 0
+        # process_frame = True
+
+        ret = None
 
         while not self.isInterruptionRequested():
 
+
             ret, frame = self.cap.read()
 
-            if process_frame == 3:
-                process_frame = 0
+            # if process_frame:
+            frame = self.img_recog.read_frame(frame, not self.is_drawing)
 
-            if process_frame == 0:
+            if ret:
+                rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                h, w, ch = rgbImage.shape
+                bytesPerLine = ch * w
+                convertToQtFormat = QtGui.QImage(rgbImage.data, w, h, bytesPerLine, QtGui.QImage.Format_RGB888)
+                pix = convertToQtFormat.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
+                self.frameChanged.emit(pix)
 
-                frame = self.img_recog.read_frame(frame, not self.is_drawing)
-
-                if ret:
-                    rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    h, w, ch = rgbImage.shape
-                    bytesPerLine = ch * w
-                    convertToQtFormat = QtGui.QImage(rgbImage.data, w, h, bytesPerLine, QtGui.QImage.Format_RGB888)
-                    pix = convertToQtFormat.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
-                    self.frameChanged.emit(pix)
-
-            process_frame += 1
+            # process_frame = not process_frame
 
         self.cap.release()
 
@@ -214,7 +213,13 @@ class ImageRecognition(QtCore.QObject):
         self.data = []
         self.known_face_encodings = []
         self.known_names = []
-        self.load()
+
+        self.face_locations = []
+        self.face_encondings = []
+
+        self.process_frame = True
+
+        self.load() 
 
     def load(self):
         """ loads the json file of known faces and preferences """
@@ -237,52 +242,53 @@ class ImageRecognition(QtCore.QObject):
 
         
     def read_frame(self, frame, draw_frame=True):
+        
+        if self.process_frame:
+            # Resize frame of video to 1/4 size for faster face recognition processing
+            small_frame = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
 
-        # Resize frame of video to 1/4 size for faster face recognition processing
-        small_frame = cv2.resize(frame, (0, 0), fx=0.15, fy=0.15)
+            # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+            rgb_small_frame = small_frame[:, :, ::-1]
 
-        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-        rgb_small_frame = small_frame[:, :, ::-1]
+            # Only process every other frame of video to save time
+            # if process_this_frame:
+                # Find all the faces and face encodings in the current frame of video
+            self.face_locations = face_recognition.face_locations(rgb_small_frame, model="cnn")
+            self.face_encodings = face_recognition.face_encodings(rgb_small_frame, self.face_locations)
 
-        # Only process every other frame of video to save time
-        # if process_this_frame:
-            # Find all the faces and face encodings in the current frame of video
-        face_locations = face_recognition.face_locations(rgb_small_frame, model="cnn")
-        face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+            self.face_names = []
+            for face_encoding in self.face_encodings:
+                # See if the face is a match for the known face(s)
+                matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
+                name = "Unknown"
 
-        face_names = []
-        for face_encoding in face_encodings:
-            # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
-            name = "Unknown"
+                # # If a match was found in known_face_encodings, just use the first one.
+                # if True in matches:
+                #     first_match_index = matches.index(True)
+                #     name = known_face_names[first_match_index]
 
-            # # If a match was found in known_face_encodings, just use the first one.
-            # if True in matches:
-            #     first_match_index = matches.index(True)
-            #     name = known_face_names[first_match_index]
+                # Or instead, use the known face with the smallest distance to the new face
+                if self.known_face_encodings:
+                    face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
+                    best_match_index = np.argmin(face_distances)
 
-            # Or instead, use the known face with the smallest distance to the new face
-            if self.known_face_encodings:
-                face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
-                best_match_index = np.argmin(face_distances)
+                    if matches[best_match_index]:
+                        name = self.known_names[best_match_index]
 
-                if matches[best_match_index]:
-                    name = self.known_names[best_match_index]
+                self.face_names.append(name)
 
-            face_names.append(name)
-
-        # if face_names:
-        self.facesFound.emit(face_names)
+            # if face_names:
+            self.facesFound.emit(self.face_names)
         # process_this_frame = not process_this_frame
         
         if draw_frame:
             # Display the results
-            for (top, right, bottom, left), name in zip(face_locations, face_names):
+            for (top, right, bottom, left), name in zip(self.face_locations, self.face_names):
                 # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-                top *= 7
-                right *= 7
-                bottom *= 7
-                left *= 7
+                top *= 8
+                right *= 8
+                bottom *= 8
+                left *= 8
 
                 # Draw a box around the face
                 cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
@@ -292,5 +298,7 @@ class ImageRecognition(QtCore.QObject):
                 font = cv2.FONT_HERSHEY_DUPLEX
                 cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
+        
+        self.process_frame = not self.process_frame
 
         return frame
