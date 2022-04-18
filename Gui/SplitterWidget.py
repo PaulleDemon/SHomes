@@ -207,7 +207,7 @@ class InstructionsExecutor(QtCore.QThread):
     connectionStatus = QtCore.pyqtSignal(str) 
 
     #NOTE: The com port for linux would be something like "/dev/ttyACM0" for windows use something like "COM3"
-    def __init__(self, com: str="COM3", baud: int=9600, *args, **kwargs): # the com port for linux "/dev/ttyACM0", windows use COM3
+    def __init__(self, com: str="/dev/ttyACM0", baud: int=9600, *args, **kwargs): # the com port for linux "/dev/ttyACM0", windows use COM3
         super(InstructionsExecutor, self).__init__(*args, **kwargs)
         self.com = com
         self.baud = baud

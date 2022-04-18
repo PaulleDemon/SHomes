@@ -20,7 +20,6 @@ void setup(){
 }
 
 void loop(){
-    digitalWrite(motorPin, HIGH);
 
     if (Serial.available()){
         String instruction = Serial.readString();
@@ -28,6 +27,7 @@ void loop(){
         if (!instruction || instruction.equals("off")){
             digitalWrite(LED1, LOW);
             digitalWrite(LED1, LOW);
+            analogWrite(MOTOR, 0);
             return;
         }
 
@@ -45,7 +45,8 @@ void loop(){
               int fanSpeed = jdoc["fanspeed"];
               bool light1 = jdoc["light1"];
               bool light2 = jdoc["light2"];
-  
+
+              
               digitalWrite(LED1, LOW); 
               digitalWrite(LED2, LOW);
               
@@ -57,7 +58,7 @@ void loop(){
                 digitalWrite(LED2, HIGH);
               }
 
-              analogWrite(motorPin, fanSpeed*63); // we get 63 from dividing 255/4 because 4 is the max speed defined in frontend
+              analogWrite(MOTOR, fanSpeed*63); // we get 63 from dividing 255/4 because 4 is the max speed defined in frontend
  
           }
         }
