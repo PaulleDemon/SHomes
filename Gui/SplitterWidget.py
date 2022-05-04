@@ -23,7 +23,7 @@ engine = pyttsx3.init()
 # voices = engine.getProperty('voices')
 # engine.setProperty('voice', voices[16].id) 
 engine.setProperty('voice', 'english+f4')
-engine.setProperty('rate', 120)
+engine.setProperty('rate', 125)
  
 
 JSON_PATH = os.path.join(os.getcwd(), "data/data.json")
@@ -131,11 +131,16 @@ class SplitterWindow(QtWidgets.QWidget):
 
         print("Spekaing")
         # self.reader.speak(greeting)
-        pyttsx3.speak(greeting+user)
+        # if not engine.isBusy():
 
-        pyttsx3.speak("Changing room ambience to your preference")
+        try:
+            pyttsx3.speak(greeting+user)
+
+            pyttsx3.speak("Changing room ambience to your preference")
+            engine.runAndWait()
         
-        print("spoke")
+        except Exception as e:
+            print(e)
 
         if read_news:
             self.news = NewsReader()     
@@ -192,14 +197,18 @@ class NewsReader(QtCore.QThread):
             pyttsx3.speak("Reading your top headlines")
             self.usleep(500)
             for x in res.json()["articles"]:
+                
                 pyttsx3.speak(x["title"])
+                
                 self.msleep(1)
 
             
         except Exception as e:
             print("error occurred: ", e)
-            pyttsx3.speak("An error occured trying to read news")
-
+            try:
+                pyttsx3.speak("An error occured trying to read news")
+            except RuntimeError as e:
+                print(e)
 
 
 class InstructionsExecutor(QtCore.QThread):
